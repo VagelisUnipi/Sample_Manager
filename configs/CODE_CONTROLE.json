@@ -1,5 +1,6 @@
 {
   "TargetTable": "code_controle",
   "HasHeader": "true",
-  "Delimiter": ","
+  "Delimiter": ",",
+  "Encoding": "windows-1252"
 }

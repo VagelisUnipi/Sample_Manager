@@ -1,5 +1,6 @@
 {
   "TargetTable": "samp_test_result_lafa",
   "HasHeader": "true",
-  "Delimiter": ","
+  "Delimiter": ",",
+  "Encoding": "windows-1252"
 }

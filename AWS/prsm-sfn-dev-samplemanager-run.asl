@@ -56,7 +56,38 @@
           }
         }
       },
-      "End": true
+      "Next": "LoadRedshiftDw"
+    },
+    "LoadRedshiftDw": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "lims-redshift-loader-lambda",
+        "Payload": {
+          "table_name": "all"
+        }
+      },
+      "OutputPath": "$.Payload",
+      "Next": "CheckDwLoadResult"
+    },
+    "CheckDwLoadResult": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.statusCode",
+          "NumericEquals": 200,
+          "Next": "DwLoadSucceeded"
+        }
+      ],
+      "Default": "DwLoadFailed"
+    },
+    "DwLoadSucceeded": {
+      "Type": "Succeed"
+    },
+    "DwLoadFailed": {
+      "Type": "Fail",
+      "Error": "DwLoadError",
+      "Cause": "Redshift DW load returned a non-200 status; see the loader Lambda logs."
     }
   }
 }

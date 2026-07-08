@@ -9,9 +9,17 @@
 --   * FKs that reference only part of a composite PK are invalid in Redshift
 --     -> commented out (FK_MENSUEL_VERSIONED_ANALYSIS, FK_MLP_VIEW_VERSIONED_ANALYSIS)
 --   * Tables reordered so every referenced table exists before its FK
+--   * Audit columns added to every table, filled by the loader Lambda from ext:
+--       SOURCE          VARCHAR(10)  -- Plant identifier (FOS / DKQ), ext `source`
+--       LAST_UPDATED_AT TIMESTAMP    -- Glue run timestamp, ext `last_updated_at`
+--     Already created your tables without them? Run per table:
+--       ALTER TABLE <table> ADD COLUMN SOURCE VARCHAR(10);
+--       ALTER TABLE <table> ADD COLUMN LAST_UPDATED_AT TIMESTAMP;
 --
 -- NOTE: In Redshift, PRIMARY KEY / FOREIGN KEY are informational only
 -- (used by the planner, NOT enforced). Uniqueness must be guaranteed by the load.
+-- The declared PKs do not include SOURCE — if the same business key can exist
+-- in both factories, treat (PK, SOURCE) as the real uniqueness rule.
 --
 -- Optional: run inside the target schema first, e.g.
 --   CREATE SCHEMA IF NOT EXISTS prism_edhid_samplemanager_dw;
@@ -27,6 +35,8 @@
 CREATE TABLE VERSIONED_ANALYSIS (
     "IDENTITY"          VARCHAR(50)     NOT NULL,
     ANALYSIS_VERSION    BIGINT          NOT NULL,
+    SOURCE              VARCHAR(10),
+    LAST_UPDATED_AT     TIMESTAMP,
     CONSTRAINT PK_VERSIONED_ANALYSIS PRIMARY KEY ("IDENTITY", ANALYSIS_VERSION)
 );
 
@@ -39,6 +49,8 @@ CREATE TABLE VERSIONED_COMPONENT (
     NAME                VARCHAR(100)    NOT NULL,
     ANALYSIS            VARCHAR(50)     NOT NULL,
     ANALYSIS_VERSION    BIGINT          NOT NULL,
+    SOURCE              VARCHAR(10),
+    LAST_UPDATED_AT     TIMESTAMP,
     CONSTRAINT PK_VERSIONED_COMPONENT PRIMARY KEY (NAME, ANALYSIS, ANALYSIS_VERSION),
     CONSTRAINT FK_VCOMP_VERSIONED_ANALYSIS FOREIGN KEY (ANALYSIS, ANALYSIS_VERSION)
         REFERENCES VERSIONED_ANALYSIS ("IDENTITY", ANALYSIS_VERSION)
@@ -52,6 +64,8 @@ CREATE TABLE VERSIONED_COMPONENT (
 CREATE TABLE MLP_HEADER (
     "IDENTITY"      VARCHAR(50)     NOT NULL,
     PRODUCT_VERSION BIGINT          NOT NULL,
+    SOURCE          VARCHAR(10),
+    LAST_UPDATED_AT TIMESTAMP,
     CONSTRAINT PK_MLP_HEADER PRIMARY KEY ("IDENTITY", PRODUCT_VERSION)
 );
 
@@ -61,6 +75,8 @@ CREATE TABLE MLP_HEADER (
 -- ----------------------------------------------------------------------------
 CREATE TABLE SAMPLE (
     ID_NUMERIC      BIGINT          NOT NULL,
+    SOURCE          VARCHAR(10),
+    LAST_UPDATED_AT TIMESTAMP,
     CONSTRAINT PK_SAMPLE PRIMARY KEY (ID_NUMERIC)
 );
 
@@ -70,6 +86,8 @@ CREATE TABLE SAMPLE (
 -- ----------------------------------------------------------------------------
 CREATE TABLE SAMPLE_POINT (
     "IDENTITY"      VARCHAR(50)     NOT NULL,
+    SOURCE          VARCHAR(10),
+    LAST_UPDATED_AT TIMESTAMP,
     CONSTRAINT PK_SAMPLE_POINT PRIMARY KEY ("IDENTITY")
 );
 
@@ -79,6 +97,8 @@ CREATE TABLE SAMPLE_POINT (
 -- ----------------------------------------------------------------------------
 CREATE TABLE CUSTOMER (
     "IDENTITY"      VARCHAR(50)     NOT NULL,
+    SOURCE          VARCHAR(10),
+    LAST_UPDATED_AT TIMESTAMP,
     CONSTRAINT PK_CUSTOMER PRIMARY KEY ("IDENTITY")
 );
 
@@ -88,6 +108,8 @@ CREATE TABLE CUSTOMER (
 -- ----------------------------------------------------------------------------
 CREATE TABLE "LOCATION" (
     "IDENTITY"      VARCHAR(50)     NOT NULL,
+    SOURCE          VARCHAR(10),
+    LAST_UPDATED_AT TIMESTAMP,
     CONSTRAINT PK_LOCATION PRIMARY KEY ("IDENTITY")
 );
 
@@ -97,6 +119,8 @@ CREATE TABLE "LOCATION" (
 -- ----------------------------------------------------------------------------
 CREATE TABLE CODE_CONTROLE (
     "IDENTITY"      VARCHAR(50)     NOT NULL,
+    SOURCE          VARCHAR(10),
+    LAST_UPDATED_AT TIMESTAMP,
     CONSTRAINT PK_CODE_CONTROLE PRIMARY KEY ("IDENTITY")
 );
 
@@ -106,6 +130,8 @@ CREATE TABLE CODE_CONTROLE (
 -- ----------------------------------------------------------------------------
 CREATE TABLE FOURNISSEUR (
     "IDENTITY"      VARCHAR(50)     NOT NULL,
+    SOURCE          VARCHAR(10),
+    LAST_UPDATED_AT TIMESTAMP,
     CONSTRAINT PK_FOURNISSEUR PRIMARY KEY ("IDENTITY")
 );
 
@@ -115,6 +141,8 @@ CREATE TABLE FOURNISSEUR (
 -- ----------------------------------------------------------------------------
 CREATE TABLE JOB_HEADER (
     JOB_NAME        VARCHAR(100)    NOT NULL,
+    SOURCE          VARCHAR(10),
+    LAST_UPDATED_AT TIMESTAMP,
     CONSTRAINT PK_JOB_HEADER PRIMARY KEY (JOB_NAME)
 );
 
@@ -126,6 +154,8 @@ CREATE TABLE JOB_HEADER (
 CREATE TABLE PHRASE (
     PHRASE_ID       VARCHAR(50)     NOT NULL,
     PHRASE_TYPE     VARCHAR(20)     NOT NULL,
+    SOURCE          VARCHAR(10),
+    LAST_UPDATED_AT TIMESTAMP,
     CONSTRAINT PK_PHRASE PRIMARY KEY (PHRASE_ID)
 );
 
@@ -135,6 +165,8 @@ CREATE TABLE PHRASE (
 -- ----------------------------------------------------------------------------
 CREATE TABLE DESTINATION (
     "IDENTITY"      VARCHAR(50)     NOT NULL,
+    SOURCE          VARCHAR(10),
+    LAST_UPDATED_AT TIMESTAMP,
     CONSTRAINT PK_DESTINATION PRIMARY KEY ("IDENTITY")
 );
 
@@ -146,6 +178,8 @@ CREATE TABLE DESTINATION (
 CREATE TABLE PHRASE_FORMAT (
     PHRASE_ID       VARCHAR(50)     NOT NULL,
     PHRASE_TYPE     VARCHAR(20)     NOT NULL,
+    SOURCE          VARCHAR(10),
+    LAST_UPDATED_AT TIMESTAMP,
     CONSTRAINT PK_PHRASE_FORMAT PRIMARY KEY (PHRASE_ID)
 );
 
@@ -159,6 +193,8 @@ CREATE TABLE MLP_VIEW (
     COMPONENT_NAME  VARCHAR(100)    NOT NULL,
     PRODUCT_ID      VARCHAR(50)     NOT NULL,
     PRODUCT_VERSION BIGINT          NOT NULL,
+    SOURCE          VARCHAR(10),
+    LAST_UPDATED_AT TIMESTAMP,
     CONSTRAINT PK_MLP_VIEW PRIMARY KEY (ANALYSIS_ID, COMPONENT_NAME, PRODUCT_ID, PRODUCT_VERSION),
     -- Not valid in Redshift: references only part of VERSIONED_ANALYSIS composite PK
     -- CONSTRAINT FK_MLP_VIEW_VERSIONED_ANALYSIS FOREIGN KEY (ANALYSIS_ID)
@@ -180,6 +216,8 @@ CREATE TABLE MENSUEL (
     PRODUCT_VERSION BIGINT          NOT NULL,
     LOCALISATION    VARCHAR(50)     NOT NULL,
     CODE_CONTROLE   VARCHAR(50),
+    SOURCE          VARCHAR(10),
+    LAST_UPDATED_AT TIMESTAMP,
     CONSTRAINT PK_MENSUEL PRIMARY KEY ("ANALYSE", PRODUIT, PRODUCT_VERSION, MESURE, LOCALISATION),
     -- Not valid in Redshift: references only part of VERSIONED_ANALYSIS composite PK
     -- CONSTRAINT FK_MENSUEL_VERSIONED_ANALYSIS FOREIGN KEY ("ANALYSE")
@@ -227,6 +265,10 @@ CREATE TABLE SAMP_TEST_RESULT_LAFA (
     GRANULOMETRIE       VARCHAR(50),
     FORMAT              VARCHAR(50),
     TEST_SCHEDULE       VARCHAR(50),
+
+    -- Plant identifier (FOS / DKQ), filled by the loader from ext `source`
+    SOURCE              VARCHAR(10),
+    LAST_UPDATED_AT     TIMESTAMP,
 
     CONSTRAINT FK_STRL_VERSIONED_ANALYSIS FOREIGN KEY (ANALYSIS, ANALYSIS_VERSION)
         REFERENCES VERSIONED_ANALYSIS ("IDENTITY", ANALYSIS_VERSION),

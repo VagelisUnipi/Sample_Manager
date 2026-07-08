@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(python generate_mocks.py)",
-      "Bash(python *)"
+      "Bash(python *)",
+      "WebSearch",
+      "Bash(PYTHONIOENCODING=utf-8 python *)"
     ]
   }
 }

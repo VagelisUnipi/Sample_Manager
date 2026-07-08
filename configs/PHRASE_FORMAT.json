@@ -1,5 +1,6 @@
 {
   "TargetTable": "phrase_format",
   "HasHeader": "true",
-  "Delimiter": ","
+  "Delimiter": ",",
+  "Encoding": "windows-1252"
 }

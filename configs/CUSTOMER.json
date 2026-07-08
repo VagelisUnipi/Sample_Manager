@@ -1,5 +1,6 @@
 {
   "TargetTable": "customer",
   "HasHeader": "true",
-  "Delimiter": ","
+  "Delimiter": ",",
+  "Encoding": "windows-1252"
 }

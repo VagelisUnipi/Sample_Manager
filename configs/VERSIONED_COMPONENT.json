@@ -1,5 +1,6 @@
 {
   "TargetTable": "versioned_component",
   "HasHeader": "true",
-  "Delimiter": ","
+  "Delimiter": ",",
+  "Encoding": "windows-1252"
 }

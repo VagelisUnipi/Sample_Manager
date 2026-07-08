@@ -1,7 +1,6 @@
 import os
 import json
 import logging
-from datetime import datetime, timezone
 from typing import Dict, Any, List
 import boto3
 
@@ -33,6 +32,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, List[Dict[s
     """
     raw_bucket, raw_prefix = parse_s3_uri(RAW_S3_BASE)
     config_bucket, config_prefix = parse_s3_uri(CONFIG_S3_BASE)
+    replicated_bucket, replicated_prefix = parse_s3_uri(REPLICATED_S3_BASE)
     files_to_process = []
 
     # Scan the landed folder for new files — paginate to handle > 1000 objects.
@@ -45,9 +45,6 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, List[Dict[s
 
     if not all_objects:
         return {"Files": []}
-
-    now = datetime.now(timezone.utc)
-    time_partition = f"year={now.strftime('%Y')}/month={now.strftime('%m')}/day={now.strftime('%d')}"
 
     for obj in all_objects:
         source_key = obj['Key']
@@ -63,6 +60,12 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, List[Dict[s
                 if stem.lower().endswith(ext):
                     stem = stem[:-len(ext)]
                     break
+            # Strip the SAP DS extract suffix so configs are keyed by the bare
+            # table name: FOURNISSEUR_prod_extract.csv.gz -> FOURNISSEUR.json
+            for suffix in ('_prod_extract', '_qa_extract', '_dev_extract'):
+                if stem.lower().endswith(suffix):
+                    stem = stem[:-len(suffix)]
+                    break
             config_key = f"{config_prefix}{stem}.json"
             config_obj = s3_client.get_object(Bucket=config_bucket, Key=config_key)
             config_data = json.loads(config_obj['Body'].read().decode('utf-8'))
@@ -74,11 +77,16 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, List[Dict[s
             source_system = source_key.split('/')[-2]
             has_header = config_data.get('HasHeader', 'true')
             delimiter = config_data.get('Delimiter', ',')
+            # Source extracts come from a legacy Oracle in Windows-1252; default
+            # stays utf-8 so new/clean sources need no config entry.
+            encoding = config_data.get('Encoding', 'utf-8')
 
             # 2. Build S3 Copy Parameters for Step Functions Replication State
+            # Mirror the landed layout: replicated/{DKQ|FOS}/{filename}.
+            # Same key every run, so the copy overwrites the previous day's file.
             replicated_copy_params = {
-                "Bucket": raw_bucket,
-                "Key": f"industry/sample-manager/replicated/{time_partition}/{filename}",
+                "Bucket": replicated_bucket,
+                "Key": f"{replicated_prefix.rstrip('/')}/{source_system}/{filename}",
                 "CopySource": f"{raw_bucket}/{source_key}"
             }
 
@@ -93,7 +101,8 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, List[Dict[s
                 "--SOURCE_SYSTEM": source_system,
                 "--DATABASE_NAME": f"prsm_glb_{ENV}_samplemanager_raw",
                 "--HAS_HEADER": has_header,
-                "--DELIMITER": delimiter
+                "--DELIMITER": delimiter,
+                "--ENCODING": encoding
             }
 
             files_to_process.append({
