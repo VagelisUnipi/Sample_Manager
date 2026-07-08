@@ -1,0 +1,5 @@
+{
+  "TargetTable": "job_header",
+  "HasHeader": "true",
+  "Delimiter": ","
+}

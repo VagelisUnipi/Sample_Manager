@@ -1,0 +1,5 @@
+{
+  "TargetTable": "mlp_header",
+  "HasHeader": "true",
+  "Delimiter": ","
+}

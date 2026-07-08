@@ -1,0 +1,5 @@
+{
+  "TargetTable": "sample_point",
+  "HasHeader": "true",
+  "Delimiter": ","
+}

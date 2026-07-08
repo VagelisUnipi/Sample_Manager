@@ -1,0 +1,5 @@
+{
+  "TargetTable": "versioned_component",
+  "HasHeader": "true",
+  "Delimiter": ","
+}

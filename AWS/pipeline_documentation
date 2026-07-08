@@ -1,0 +1,65 @@
+Workflow Explanation: Metadata-Driven LIMS Ingestion Pipeline
+This Step Function orchestrates a data ingestion and transformation pipeline, likely for a Laboratory Information Management System (LIMS). Here is the step-by-step breakdown based on your provided Amazon States Language (ASL) JSON:
+
+Start: DiscoverAndConfigLambda
+
+Type: Task (AWS Lambda Invoke)
+
+Action: Invokes a Lambda function named lims-config-router-lambda.
+
+Purpose: This acts as the entry point. It likely evaluates an incoming payload, discovers which files need to be processed, and generates the necessary configuration parameters for the next steps. It outputs this configuration (specifically, an array of files) to the next state.
+
+Iteration: ProcessFilesMap
+
+Type: Map
+
+Action: Iterates over the $.Files array provided by the previous Lambda step.
+
+Purpose: It acts as a loop, taking each file item and running it through the enclosed states. It is configured with "MaxConcurrency": 10, meaning it will process up to 10 files simultaneously to optimize throughput.
+
+Concurrency: ParallelProcessing (Inside the Map State)
+
+Type: Parallel
+
+Action: Splits the workflow into two independent branches that execute simultaneously for each file being processed in the Map state.
+
+Branch 1: CopyToReplicatedVault
+
+Uses the AWS SDK integration to execute an S3 CopyObject command.
+
+It dynamically pulls the destination Bucket, target Key, and CopySource from the state input ($.ReplicatedCopyParams). This serves as a raw backup or data replication step.
+
+Branch 2: ExecuteGlueTransformation
+
+Uses the optimized integration to trigger an AWS Glue Job named lims_ingestion_job.
+
+It runs synchronously (.sync), meaning the Step Function will wait for the Glue job to finish before completing this branch. It passes dynamic arguments ($.GlueArguments) to the job for data transformation.
+
+End
+
+The Map state completes once all files have successfully finished both parallel branches, and the overall state machine successfully terminates.
+
+Code Breakdown
+1. Reading the Raw Data
+The script reads a raw CSV file from an S3 bucket (SOURCE_S3_PATH). It correctly handles commas inside text fields by using the quote and escape options.
+
+2. Adding Metadata (Partitioning)
+It injects four new columns into your data: source, year, month, and day. These are based on the arguments passed by the Step Function and the current UTC time.
+
+3. Writing to S3 and the Glue Data Catalog
+This is the crucial part:
+
+Python
+
+
+df_partitioned.write \
+    .mode("append") \
+    .format("parquet") \
+    .partitionBy("source", "year", "month", "day") \
+    .option("path", args['PROCESSED_S3_PATH']) \
+    .saveAsTable(f"{args['DATABASE_NAME']}.{args['TARGET_TABLE']}")
+Format: It converts the data from CSV into Snappy Parquet (a highly compressed, columnar format).
+
+Storage: It saves these Parquet files into a new S3 bucket path (PROCESSED_S3_PATH), organizing them into folders by source and date (e.g., source=lims/year=2026/month=07/day=03/).
+
+Registration: .saveAsTable registers this S3 location as a table in the AWS Glue Data Catalog (under the provided database and table names).

@@ -1,0 +1,6 @@
+-- LOCATION
+-- Physical location / site reference table.
+CREATE TABLE LOCATION (
+    IDENTITY        VARCHAR2(50)    NOT NULL,
+    CONSTRAINT PK_LOCATION PRIMARY KEY (IDENTITY)
+);

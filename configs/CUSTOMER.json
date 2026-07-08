@@ -1,0 +1,5 @@
+{
+  "TargetTable": "customer",
+  "HasHeader": "true",
+  "Delimiter": ","
+}

@@ -1,0 +1,5 @@
+{
+  "TargetTable": "mensuel",
+  "HasHeader": "true",
+  "Delimiter": ","
+}

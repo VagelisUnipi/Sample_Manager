@@ -1,0 +1,5 @@
+{
+  "TargetTable": "phrase_format",
+  "HasHeader": "true",
+  "Delimiter": ","
+}

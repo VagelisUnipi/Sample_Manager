@@ -1,0 +1,5 @@
+{
+  "TargetTable": "versioned_analysis",
+  "HasHeader": "true",
+  "Delimiter": ","
+}

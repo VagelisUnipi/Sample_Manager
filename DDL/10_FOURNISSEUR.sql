@@ -1,0 +1,6 @@
+-- FOURNISSEUR
+-- Supplier (fournisseur) reference table.
+CREATE TABLE FOURNISSEUR (
+    IDENTITY        VARCHAR2(50)    NOT NULL,
+    CONSTRAINT PK_FOURNISSEUR PRIMARY KEY (IDENTITY)
+);

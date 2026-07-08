@@ -1,0 +1,5 @@
+{
+  "TargetTable": "samp_test_result_lafa",
+  "HasHeader": "true",
+  "Delimiter": ","
+}
