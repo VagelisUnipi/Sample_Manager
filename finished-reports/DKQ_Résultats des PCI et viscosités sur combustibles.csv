@@ -1,0 +1,11 @@
+DKQ_Résultats des PCI et viscosités sur combustibles,,,,,
+,,,,,
+Fields which must be incuded in the view for this report,,,,,
+Report fields,Sample data,View Column Name,Source Table,Source Table Fields Names,Status on view columns
+Code produit,51CUVEX2,product_code,LAFA fact,PRODUCT,Exists
+Date de prélèvement,25/10/2025,sampled_date,LAFA fact,SAMPLED_DATE,Exists
+N° BDQ,231867,sample_number,LAFA fact,ID_NUMERIC,Exists
+Commentaire,F1X2 DU 25.10.25,comments,LAFA fact,COMMENTAIRES,Exists
+PCS labo,10300,pcs_labo,LAFA fact,RESULT_VALUE where COMPONENT_NAME='PCS labo' (pivot),Exists (pivot - confirmed in VERSIONED_COMPONENT)
+PCI calculé,9700,pci_calcule,LAFA fact,RESULT_VALUE where COMPONENT_NAME='PCI' (pivot),Exists (pivot - component 'PCI' confirmed; report's 3 components coexist only in COMB-REGLE)
+Viscosité dynamique à 50°C,"27,09",viscosite_50c,LAFA fact,RESULT_VALUE where COMPONENT_NAME='Viscosité dynamique à 50°C' (pivot),Exists (pivot - confirmed in VERSIONED_COMPONENT)

@@ -1,0 +1,6 @@
+{
+  "TargetTable": "c_samp_test_result_lafa",
+  "HasHeader": "true",
+  "Delimiter": ",",
+  "Encoding": "windows-1252"
+}

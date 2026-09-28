@@ -1,0 +1,36 @@
+MESURES hors spécifications - DKQ,,,,,
+,,,,,
+Fields which must be incuded in the view for this report,,,,,
+Report fields,Sample data,View Column Name,Source Table,Source Table Fields Names,Status on view columns
+Source,DKQ or FOS,source,LAFA fact,SOURCE,Exists
+Codes contôles choisis :,TOUS,control_code,LAFA fact,CODE_CONTROLE,Exists
+Produits actifs :,OUI,product_active,MLP_HEADER,mlp_header.REMOVEFLAG -> OUI/NON,Pending (MLP key)
+Produits qualifiés choisis :,TOUS,qualified_product,LAFA fact,PRODUIT_QUALIFIE,Exists
+Noms d'analyses choisis :,TOUS,analysis_code,LAFA fact,ANALYSIS,Exists
+Noms de mesures choisis :,TOUS,component_name,LAFA fact,COMPONENT_NAME,Exists
+Niveau de spécification :,ACHAT;ALERTE;ALERTECRU;ALERTEPF;ANOMALIE;CHANGEMENT;CONTROLSUP;ECART_MP;FICHETECHN;ISOLEMENT;MELANGE;NC-FILIALE;,spec_level,MLP_VIEW,mlp_view.LEVEL_ID,Pending (not ingested)
+Type de Date,DP,(prompt),-,date selector DP=SAMPLED_DATE / DA=LOGIN_DATE,Report-side
+Date de début :,41312,sampled_date,LAFA fact,SAMPLED_DATE (>=),Exists
+Date de fin :,"41312,66667",sampled_date,LAFA fact,SAMPLED_DATE (<=),Exists
+Nb de jours :,*,(computed),-,date span,Report-side
+Code produit,20CB,product_code,LAFA fact,PRODUCT,Exists
+Produit qualifé,20GONTERO,qualified_product,LAFA fact,PRODUIT_QUALIFIE,Exists
+Code contrôle,CALG,control_code,LAFA fact,CODE_CONTROLE,Exists
+Type d'échantillon,NORMAL,sample_type,LAFA fact,SAMPLE_TYPE,Exists
+Code origine matière,CARRIERE,material_origin,LAFA fact,LOCATION_ID,Exists
+Point de prélèvement,PARC,sampling_point,LAFA fact,SAMPLING_POINT,Exists
+Echantillon,20CB/D20130207-1509/8929,sample_reference,LAFA fact,ID_TEXT,Exists
+Num Echantillon,99075,sample_number,LAFA fact,ID_NUMERIC,Exists
+Livraison,"41312,63125",delivery_date,JOB_HEADER,job_header.DATE_LIVRAISON,Exists
+Analyse,"41312,63125",analysis_date,LAFA fact,LOGIN_DATE,Exists
+Code de l'analyse,S4,analysis_code,LAFA fact,ANALYSIS,Exists
+Mesure,"CaO, MgO",component_name,LAFA fact,COMPONENT_NAME,Exists
+Niveau de specification,ECART_MP,spec_level,MLP_VIEW,mlp_view.LEVEL_ID,Pending (not ingested)
+Mesures,53.01,result_value,LAFA fact,RESULT_VALUE,Exists
+Valeur cible,52.5,target_value,MLP_VIEW,mlp_view.TYPICAL_TEXT,Pending (not ingested)
+Specif min,54.50,spec_min,MLP_VIEW,mlp_view.MIN_LIMIT (decode -999999.00 -> blank),Pending (not ingested)
+Specif max,100.00,spec_max,MLP_VIEW,mlp_view.MAX_LIMIT (decode 999999.00 -> blank),Pending (not ingested)
+Destination,TAS_S,destination_material,LAFA fact,DESTINATION_MATIERE,Exists
+Qualif. Auto,NON,auto_qualification,LAFA fact,OUT_OF_RANGE -> OUI/NON (decode T=NON),Exists
+Qualif Echant,OUI,sample_qualification,LAFA fact,ON_SPEC -> OUI/NON (decode T=OUI),Exists
+Commentaire,prélevé sur parc le 7/2/13 + KRTC,comments,LAFA fact,COMMENTAIRES,Exists

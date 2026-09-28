@@ -1,0 +1,42 @@
+#,View Column,Source Table.Column,Role,Pivot (composant),Note
+1,source,LAFA.SOURCE,factory key,,DKQ/FOS
+2,site,LAFA.SOURCE,attribute,,"Suivi ""Site"""
+3,sample_number,LAFA.ID_NUMERIC,key,,
+4,sample_reference,LAFA.ID_TEXT,attribute,,
+5,sampled_date,LAFA.SAMPLED_DATE,date,,Date et heure / prélèvement / date filters
+6,analysis_date,LAFA.LOGIN_DATE,date,,"MESURES ""Analyse"""
+7,sample_type,LAFA.SAMPLE_TYPE,attribute,,
+8,customer_code,LAFA.CUSTOMER_ID,attribute,,
+9,material_origin,LAFA.LOCATION_ID,attribute,,Origine
+10,sampling_point,LAFA.SAMPLING_POINT,attribute,,Pt de prélev
+11,sampler,LAFA.PRELEVEUR,attribute,,Prélev
+12,destination_material,LAFA.DESTINATION_MATIERE,attribute,,
+13,tonnage,LAFA.TONNAGE,attribute,,
+14,packaging,LAFA.CONDITIONNEMENT,attribute,,
+15,lot_number,LAFA.NUM_LOT,attribute,,
+16,delivery_note,LAFA.REF_LIVRAISON,attribute,,Numéros de BL
+17,commentaires,LAFA.COMMENTAIRES,attribute,,unaliased (manager style)
+18,product_code,LAFA.PRODUCT,attribute,,
+19,qualified_product,LAFA.PRODUIT_QUALIFIE,attribute,,Produit qualifé / cible?
+20,product_active,MLP_HEADER.REMOVEFLAG,flag,,live join - returns NON pending MLP key
+21,product_label,MLP_HEADER.DESCRIPTION,attribute,,coalesce MOCK fallback 'Bauxite Rouge ( 40-100 )' pending MLP key
+22,control_code,LAFA.CODE_CONTROLE,attribute,,
+23,control_code_active,CODE_CONTROLE.REMOVEFLAG,flag,,
+24,analysis_code,LAFA.ANALYSIS,attribute,,
+25,analysis_type,VERSIONED_ANALYSIS.ANALYSIS_TYPE,attribute,,USINE if blank
+26,component_name,LAFA.COMPONENT_NAME,dimension,PIVOT KEY (composant),becomes columns in SAC
+27,result_value,LAFA.RESULT_VALUE,measure,PIVOT VALUE,fills the pivoted cells
+28,spec_level,MLP_VIEW.LEVEL_ID,attribute,,PLACEHOLDER 'ECART_MP' - mlp_view not ingested
+29,target_value,MLP_VIEW.TYPICAL_TEXT,attribute,,PLACEHOLDER '52.5' - mlp_view not ingested
+30,spec_min,MLP_VIEW.MIN_LIMIT,attribute,,PLACEHOLDER '54.50' - mlp_view not ingested
+31,spec_max,MLP_VIEW.MAX_LIMIT,attribute,,PLACEHOLDER '100.00' - mlp_view not ingested
+32,auto_qualification,LAFA.OUT_OF_RANGE,flag,,T->NON else OUI
+33,sample_qualification,LAFA.ON_SPEC,flag,,T->OUI else NON
+34,granulometry,PHRASE.PHRASE_TEXT,attribute,,scoped GRANULO + source
+35,shape,PHRASE_FORMAT.PHRASE_TEXT,attribute,,PLACEHOLDER 'CONCASSE' - phrase_format not ingested
+36,job_name,JOB_HEADER.JOB_NAME,attribute,,
+37,supplier,JOB_HEADER.FOURNISSEUR,attribute,,
+38,delivery_date,JOB_HEADER.DATE_LIVRAISON,date,,Livraison
+39,delivery_reference,JOB_HEADER.REF_LIVRAISON,attribute,,"Suivi ""Réf de livraison"""
+40,supplier_lot_number,JOB_HEADER.LOT_FOURNISSEUR,attribute,,"Suivi ""N° de lot"""
+41,storage_pile,JOB_HEADER.TAS_STOCKAGE,attribute,,Tas de stockage

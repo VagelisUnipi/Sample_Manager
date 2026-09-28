@@ -1,0 +1,17 @@
+-- LOCATION (Redshift DW typed table)
+-- Deploy order 07/15 (forward FK order).
+-- Source of truth: DDL/latest_dll_truth/ALL_TABLES_REDSHIFT.sql
+
+CREATE TABLE "LOCATION" (
+    "IDENTITY"      VARCHAR(50)     NOT NULL,
+    GROUP_ID        VARCHAR(50),
+    DESCRIPTION     VARCHAR(200),
+    MODIFIED_ON     VARCHAR(20),
+    MODIFIED_BY     VARCHAR(50),
+    MODIFIABLE      CHAR(1),
+    REMOVEFLAG      CHAR(1),
+    ORDER_NUMBER    BIGINT,
+    SOURCE          VARCHAR(10),
+    LAST_UPDATED_AT TIMESTAMP,
+    CONSTRAINT PK_LOCATION PRIMARY KEY ("IDENTITY")
+);

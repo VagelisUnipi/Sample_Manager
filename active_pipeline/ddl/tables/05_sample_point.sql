@@ -1,0 +1,18 @@
+-- SAMPLE_POINT (Redshift DW typed table)
+-- Deploy order 05/15 (forward FK order).
+-- Source of truth: DDL/latest_dll_truth/ALL_TABLES_REDSHIFT.sql
+
+CREATE TABLE SAMPLE_POINT (
+    "IDENTITY"      VARCHAR(50)     NOT NULL,
+    GROUP_ID        VARCHAR(50),
+    POINT_LOCATION  VARCHAR(50),
+    SAMPLE_TYPE     VARCHAR(50),
+    DESCRIPTION     VARCHAR(200),
+    MODIFIED_ON     VARCHAR(20),
+    MODIFIED_BY     VARCHAR(50),
+    MODIFIABLE      CHAR(1),
+    REMOVEFLAG      CHAR(1),
+    SOURCE          VARCHAR(10),
+    LAST_UPDATED_AT TIMESTAMP,
+    CONSTRAINT PK_SAMPLE_POINT PRIMARY KEY ("IDENTITY")
+);

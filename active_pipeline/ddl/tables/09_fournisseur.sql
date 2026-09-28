@@ -1,0 +1,22 @@
+-- FOURNISSEUR (Redshift DW typed table)
+-- Deploy order 09/15 (forward FK order).
+-- Source of truth: DDL/latest_dll_truth/ALL_TABLES_REDSHIFT.sql
+
+CREATE TABLE FOURNISSEUR (
+    "IDENTITY"      VARCHAR(50)     NOT NULL,
+    GROUP_ID        VARCHAR(50),
+    COMPANY_NAME    VARCHAR(200),
+    CONTACT         VARCHAR(100),
+    TELEPHONE       VARCHAR(50),
+    ADDRESS1        VARCHAR(100),
+    ADDRESS2        VARCHAR(100),
+    ADDRESS3        VARCHAR(100),
+    ADDRESS4        VARCHAR(100),
+    MODIFIED_ON     VARCHAR(20),
+    MODIFIED_BY     VARCHAR(50),
+    MODIFIABLE      CHAR(1),
+    REMOVEFLAG      CHAR(1),
+    SOURCE          VARCHAR(10),
+    LAST_UPDATED_AT TIMESTAMP,
+    CONSTRAINT PK_FOURNISSEUR PRIMARY KEY ("IDENTITY")
+);

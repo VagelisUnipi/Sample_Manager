@@ -1,0 +1,29 @@
+can Suivi_bateaux_bauxite - DKQ,,,,,
+,,,,,
+Fields which must be incuded in the view for this report,,,,,
+Report fields,Sample data,View Column Name,Source Table,Source Table Fields Names,Status on view columns
+Source,DKQ or FOS,source,LAFA fact,SOURCE,Exists
+Nom du job,BAUTEK_2005_01,job_name,JOB_HEADER,job_header.JOB_NAME,Exists
+Fournisseur,BAUTEK,supplier,JOB_HEADER,job_header.FOURNISSEUR,Exists
+Date de livraison,"43972,64028",delivery_date,JOB_HEADER,job_header.DATE_LIVRAISON,Exists
+Réf de livraison,MSC AGADIR,delivery_reference,JOB_HEADER,job_header.REF_LIVRAISON,Exists
+N° de lot,,lot_number,JOB_HEADER,job_header.LOT_FOURNISSEUR,Exists
+Tas de stockage,,storage_pile,JOB_HEADER,job_header.TAS_STOCKAGE,Exists
+Produit cible,14STANDARD (Bauxite Blanche 14Hors contrat),qualified_product,LAFA fact,PRODUIT_QUALIFIE,Confirm (not a DKQ spec dimension)
+Granulométrie,40-100 mm,granulometry,PHRASE,phrase.PHRASE_TEXT,Exists
+Forme,,shape,PHRASE_FORMAT,phrase_format.PHRASE_TEXT,Pending (not ingested)
+Origine Matière,FOS,material_origin,LAFA fact,LOCATION_ID,Exists
+N° échantillon,165333,sample_number,LAFA fact,ID_NUMERIC,Exists
+Type échantillon,MOYEN,sample_type,LAFA fact,SAMPLE_TYPE,Exists
+Date d'échantillon,43972,sampled_date,LAFA fact,SAMPLED_DATE,Exists
+Prélev,SGS,sampler,LAFA fact,PRELEVEUR,Exists
+Pt de prélev,ARRIVEE,sampling_point,LAFA fact,SAMPLING_POINT,Exists
+Tonnage,200,tonnage,LAFA fact,TONNAGE,Exists
+Type d'analyse,KRC,analysis_type,VERSIONED_ANALYSIS,versioned_analysis.ANALYSIS_TYPE -> USINE if blank,Exists
+Commentaire,200t bautek,comments,LAFA fact,COMMENTAIRES,Exists
+Composant,,component_name,LAFA fact,COMPONENT_NAME,Exists
+Code produit,1SILVERP,product_code,LAFA fact,PRODUCT,Exists
+Libellé du produit,Bauxite Rouge ( 40-100 ) fournie par SILVER AND BARYTE,product_label,MLP_HEADER,mlp_header.DESCRIPTION,Pending (MLP key)
+Code de l'analyse,ANALYS-S-C,analysis_code,LAFA fact,ANALYSIS,Exists
+Mesures,53.01,result_value,LAFA fact,RESULT_VALUE,Exists
+Site,TERSCHELLING_0904_01,site,LAFA fact,SOURCE,Exists

@@ -1,0 +1,12 @@
+DKQ_Bilan KK quotidien,,,,,
+,,,,,
+Fields which must be incuded in the view for this report,,,,,
+Report fields,Sample data,View Column Name,Source Table,Source Table Fields Names,Status on view columns
+Code contrôle ,CCH1,control_code,LAFA fact,CODE_CONTROLE,Exists
+N,1,(row number),-,ROW_NUMBER(),Generate
+Date et heure,"45970,25278",sampled_date,LAFA fact,SAMPLED_DATE,Exists
+Echantillon,KTRG/D20251109-0630/2005,sample_reference,LAFA fact,ID_TEXT,Exists
+Num Echantillon,232151,sample_number,LAFA fact,ID_NUMERIC,Exists
+Origine,FOUR1,material_origin,LAFA fact,LOCATION_ID,Exists
+Composant,Al2O3,component_name,LAFA fact,COMPONENT_NAME,Exists
+Mesures,"39,69",result_value,LAFA fact,RESULT_VALUE,Exists

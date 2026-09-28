@@ -1,0 +1,250 @@
+===============================================================================
+ SampleManager LIMS Pipeline - Focused Flow: S3  ->  Reporting View
+===============================================================================
+ Scope: only the segment that starts with files already sitting in S3 and ends
+ at the Redshift reporting views. Upstream Oracle extraction is out of scope.
+
+ High-level path:
+
+   S3 landed CSV
+        |  (AWS Glue PySpark job)
+        v
+   S3 processed Parquet  +  Glue Data Catalog table
+        |  (Redshift Spectrum external schema)
+        v
+   Redshift EXT (external/Spectrum) tables   -- all columns as text
+        |  (Redshift loader Lambda: DELETE + INSERT ... SELECT with casts)
+        v
+   Redshift DW (typed) tables
+        |  (SQL views)
+        v
+   vw_lafa_report_base  ->  vw_bilan_kk_dkq / vw_recherche_simplifiee  ->  SAC
+
+ Schemas / locations used in this segment:
+   S3 processed          : PROCESSED_S3_BASE/<table>/source=<DKQ|FOS>/
+   Glue Data Catalog DB  : prsm_glb_<env>_samplemanager_raw
+   Redshift ext schema   : prsm_edhid_samplemanager_ext   (Spectrum, text columns)
+   Redshift DW schema    : prsm_edhid_samplemanager_dw     (typed tables + views)
+
+
+-------------------------------------------------------------------------------
+ STAGE 1 - INPUT: S3 landed CSV
+-------------------------------------------------------------------------------
+ What it is:
+   Daily full extracts already dropped in S3, one file per source table, under a
+   per-factory subfolder that doubles as the source-system tag:
+
+     raw/DKQ/SAMP_TEST_RESULT_LAFA_prod_extract.csv.gz
+     raw/FOS/SAMP_TEST_RESULT_LAFA_prod_extract.csv.gz
+
+ Characteristics:
+   - gzipped CSV, header row, comma-delimited, windows-1252 encoding (legacy Oracle)
+   - full drop-reload each run (not incremental)
+   - the factory (DKQ / FOS) is the only partition dimension
+
+ Per-file behaviour is metadata-driven by a small config JSON (one per table):
+
+     { "TargetTable": "samp_test_result_lafa", "HasHeader": "true",
+       "Delimiter": ",", "Encoding": "windows-1252" }
+
+
+-------------------------------------------------------------------------------
+ STAGE 2 - TRANSFORM: AWS Glue job  (lims_ingestion_job, PySpark)
+-------------------------------------------------------------------------------
+ What the component does (high level):
+   Converts one raw CSV into columnar Parquet and registers/refreshes it in the
+   Glue Data Catalog so Redshift Spectrum can read it. Runs once per file.
+
+ Steps:
+   1. Read the CSV as ALL-STRING (inferSchema = false) using the delimiter,
+      encoding and header flag from the config. No typing happens here - typing
+      is deferred to the DW load (Stage 4) so a bad value never fails Glue.
+   2. Add two columns:
+        source            = factory (DKQ / FOS)   -> becomes the partition key
+        last_updated_at   = current_timestamp()    -> load lineage
+   3. Write Snappy Parquet, partitioned by `source`, to:
+        PROCESSED_S3_BASE/<table>/source=<DKQ|FOS>/
+   4. Register the table in the Glue Data Catalog DB
+      (prsm_glb_<env>_samplemanager_raw).
+
+ Operational safeguards (why the code is more than a plain write):
+   - Re-runs delete ONLY this factory's partition objects from S3 and rewrite the
+     Parquet in place -> no catalog rewrite, zero Glue TABLE_VERSION churn
+     (the account-wide 1,000,000 version limit was previously hit).
+   - Schema-drift guard: if the incoming columns no longer match the catalog, the
+     table is dropped + its S3 prefix wiped so it is recreated with the new schema.
+   - Handles concurrent DKQ/FOS first-create race and cleans EMRFS _$folder$ markers.
+
+ Output of this stage:
+   Catalogued, partitioned Parquet - one Glue table per source table, every
+   column still typed as string.
+
+
+-------------------------------------------------------------------------------
+ STAGE 3 - EXPOSE: Redshift Spectrum external (EXT) tables
+-------------------------------------------------------------------------------
+ What it is:
+   The Glue Data Catalog tables are surfaced to Redshift through an external
+   schema:
+
+     schema  prsm_edhid_samplemanager_ext
+     tables  one per source table, e.g. prsm_edhid_samplemanager_ext.samp_test_result_lafa
+
+ Key points:
+   - Spectrum reads the S3 Parquet directly - nothing is copied into Redshift here.
+   - EVERY column is exposed as text (string); `source` is the partition column.
+   - Glue lowercases all catalog column names, so downstream SQL references the
+     ext columns in lowercase.
+   - An ext table only exists once its source file has been processed by Glue.
+
+
+-------------------------------------------------------------------------------
+ STAGE 4 - LOAD: Redshift loader Lambda  (lims-redshift-loader-lambda)
+-------------------------------------------------------------------------------
+ What the component does (high level):
+   Reloads the typed DW tables from the ext (text) tables, casting each column to
+   its real type. Invoked with { "table_name": "all" } to reload all 15 tables in
+   a single transaction.
+
+ Per table it runs exactly two statements:
+
+     DELETE FROM prsm_edhid_samplemanager_dw."<table>";
+
+     INSERT INTO prsm_edhid_samplemanager_dw."<table>" (<cols>, "SOURCE", "LAST_UPDATED_AT")
+     SELECT
+         CAST("id_text" AS VARCHAR(100))            AS "ID_TEXT",
+         CAST(NULLIF(TRIM("id_numeric"), '') AS BIGINT) AS "ID_NUMERIC",
+         ... one cast per column ...
+         CAST("source" AS VARCHAR(10))              AS "SOURCE",
+         CAST("last_updated_at" AS TIMESTAMP)       AS "LAST_UPDATED_AT"
+     FROM prsm_edhid_samplemanager_ext."<table>"
+     [ WHERE <row filter> ];
+
+ Rules / why it is built this way:
+   - Casting: text -> typed. Numerics use CAST(NULLIF(TRIM(x),'') AS BIGINT) so
+     blanks become NULL instead of failing.
+   - DELETE (not TRUNCATE) + one final COMMIT = atomic reload. TRUNCATE auto-commits
+     in Redshift, so a mid-run failure would leave a table empty; with DELETE, a
+     failure commits nothing and yesterday's data survives.
+   - Missing ext table (source not delivered yet) is skipped and reported, not failed;
+     that DW table simply keeps its previous data.
+   - Temporary row filter on the two fact tables drops rows whose id_numeric is not a
+     clean integer (guards against corrupt Oracle spool text landing in the file):
+        WHERE TRIM("id_numeric") ~ '^[0-9]+$'
+
+ Output of this stage:
+   Fully typed rows in the DW schema prsm_edhid_samplemanager_dw.
+
+
+-------------------------------------------------------------------------------
+ STAGE 5 - DW TABLE DEFINITIONS  (prsm_edhid_samplemanager_dw)
+-------------------------------------------------------------------------------
+ 15 typed tables, each ending in the two pipeline-added columns
+ (SOURCE VARCHAR(10), LAST_UPDATED_AT TIMESTAMP) plus PK/FK constraints.
+ Full DDL: DDL/latest_dll_truth/ALL_TABLES_REDSHIFT.sql
+
+ The two fact tables are the heart of the model and are structurally IDENTICAL
+ (81 source columns). One holds the live rolling window, the other the archived
+ (completed/authorised) history; their row-sets are disjoint.
+
+   CREATE TABLE SAMP_TEST_RESULT_LAFA (      -- and C_SAMP_TEST_RESULT_LAFA (identical)
+       ID_NUMERIC          BIGINT,
+       ID_TEXT             VARCHAR(100),
+       STATUS              CHAR(1),
+       CUSTOMER_ID         VARCHAR(50),
+       FOURNISSEUR         VARCHAR(50),
+       PRODUCT             VARCHAR(50),
+       PRODUCT_VERSION     BIGINT,
+       ... (denormalized: LOCATION_ID, SAMPLING_POINT, DESTINATION_MATIERE,
+            CODE_CONTROLE, JOB_NAME, ANALYSIS, COMPONENT_NAME, RESULT_VALUE,
+            SAMPLED_DATE, LOGIN_DATE, DATE_RESULT_ENTERED, ON_SPEC, OUT_OF_RANGE,
+            GRANULOMETRIE, PRODUIT_QUALIFIE, TONNAGE, ... 81 cols total) ...
+       SOURCE              VARCHAR(10),
+       LAST_UPDATED_AT     TIMESTAMP,
+       CONSTRAINT FK_STRL_MLP_HEADER   FOREIGN KEY (PRODUCT, PRODUCT_VERSION) ...
+       CONSTRAINT FK_STRL_CODE_CONTROLE FOREIGN KEY (CODE_CONTROLE) ...
+       CONSTRAINT FK_STRL_JOB_HEADER   FOREIGN KEY (JOB_NAME) ...
+       CONSTRAINT FK_STRL_PHRASE       FOREIGN KEY (GRANULOMETRIE) ...
+   );
+
+ Because the fact tables are denormalized (they already carry customer_id,
+ location_id, sampling_point, etc. as codes), the reporting layer only needs a
+ few small dimension tables. Example dimension:
+
+   CREATE TABLE CODE_CONTROLE (
+       "IDENTITY"    VARCHAR(50) NOT NULL,   -- join key
+       DESCRIPTION   VARCHAR(200),
+       REMOVEFLAG    CHAR(1),                -- 'F' = active
+       ... ,
+       SOURCE VARCHAR(10), LAST_UPDATED_AT TIMESTAMP,
+       CONSTRAINT PK_CODE_CONTROLE PRIMARY KEY ("IDENTITY")
+   );
+
+ Tables actually consumed by the reporting layer (7):
+   samp_test_result_lafa, c_samp_test_result_lafa, code_controle, mlp_header,
+   job_header, versioned_analysis, phrase.
+ The remaining loaded tables (customer, location, fournisseur, sample_point,
+ sample, c_sample, versioned_component, mensuel) are NOT read by any view.
+
+
+-------------------------------------------------------------------------------
+ STAGE 6 - REPORTING VIEWS  (prsm_edhid_samplemanager_dw)
+-------------------------------------------------------------------------------
+ (A) Base view - vw_lafa_report_base
+     What it does: presents one clean, report-shaped row per test result across
+     BOTH factories and BOTH the live and archived fact tables. It:
+       - UNIONs samp_test_result_lafa and c_samp_test_result_lafa (full history),
+       - LEFT JOINs the 5 dimensions to enrich / label,
+       - normalizes the text dates (DD/MM/YY and DD-MON-YY) into real dates,
+       - derives OUI/NON flags (e.g. active, on-spec) from source flags,
+       - adds a per-source ROW_NUMBER() and a few placeholder columns for fields
+         not yet ingested (spec limits, shape).
+
+     Skeleton (date-parsing and column list abbreviated):
+
+       CREATE OR REPLACE VIEW prsm_edhid_samplemanager_dw.vw_lafa_report_base AS
+       SELECT row_number() OVER (PARTITION BY source
+                                 ORDER BY date_prelevement, sample_number, component_name) AS n,
+              u.*
+       FROM (
+         SELECT st.source, st.id_numeric AS sample_number, st.id_text AS sample_reference,
+                <normalized dates>, st.sample_type, st.customer_id AS customer_code,
+                st.location_id AS material_origin, st.result_value, st.component_name,
+                CASE WHEN c.removeflag='F' THEN 'OUI' ELSE 'NON' END AS control_code_active,
+                COALESCE(h.description, ...) AS product_label,
+                va.analysis_type, p.phrase_text AS granulometry,
+                j.fournisseur AS supplier, j.ref_livraison AS delivery_reference, ...
+         FROM prsm_edhid_samplemanager_dw.samp_test_result_lafa st
+         LEFT JOIN prsm_edhid_samplemanager_dw.code_controle      c  ON st.code_controle = c."identity"
+         LEFT JOIN prsm_edhid_samplemanager_dw.mlp_header         h  ON h."identity"=st.product AND h.product_version=st.product_version
+         LEFT JOIN prsm_edhid_samplemanager_dw.job_header         j  ON st.job_name = j.job_name
+         LEFT JOIN prsm_edhid_samplemanager_dw.versioned_analysis va ON va."identity"=st.analysis AND va.analysis_version=st.analysis_version
+         LEFT JOIN prsm_edhid_samplemanager_dw.phrase             p  ON p.phrase_id=st.granulometrie AND p.phrase_type='GRANULO' AND p.source=st.source
+
+         UNION
+
+         SELECT ct.source, ... same shape ...
+         FROM prsm_edhid_samplemanager_dw.c_samp_test_result_lafa ct
+         LEFT JOIN ... same 5 joins on ct ...
+       ) u;
+
+     Values are read from exactly these tables:
+       st/ct = samp_test_result_lafa + c_samp_test_result_lafa   (the facts)
+       c     = code_controle          (removeflag -> control_code_active)
+       h     = mlp_header             (removeflag, description -> product label/active)
+       j     = job_header             (supplier, delivery ref, lot, storage pile, delivery date)
+       va    = versioned_analysis     (analysis_type)
+       p     = phrase                 (phrase_text -> granulometry)
+
+
+-------------------------------------------------------------------------------
+ SUMMARY (one line per component)
+-------------------------------------------------------------------------------
+ S3 landed CSV .......... daily full per-factory extracts (text, windows-1252)
+ Glue job ............... CSV -> partitioned Parquet + Glue Catalog (all text)
+ Spectrum ext schema .... exposes the Parquet to Redshift as text tables
+ Loader Lambda .......... DELETE + INSERT..SELECT with casts -> typed DW tables (atomic)
+ DW tables .............. 15 typed tables; 2 identical 81-col fact tables + dimensions
+ vw_lafa_report_base .... UNION of both facts + 5 dimension joins, report-shaped
+ report views ........... thin wrappers on the base view -> SAC
+===============================================================================

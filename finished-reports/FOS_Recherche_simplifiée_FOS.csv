@@ -1,0 +1,34 @@
+FOS_Recherche_simplifiée_FOS,,,,,
+PAGE 1,,,,,
+,,,,,
+Fields which must be incuded in the view for this report,,,,,
+Report fields,Sample data,View Column Name,Source Table,Source Table Fields Names,Status on view columns
+Source,DKQ or FOS,From Redshift,,,
+Codes contôles choisis :,TOUS,control_code,LAFA fact,CODE_CONTROLE,Exists
+Codes contôles actifs ?,OUI,control_code_active,CODE_CONTROLE,code_controle.REMOVEFLAG -> OUI/NON,Exists
+Codes produits choisis :,TOUS,product_code,LAFA fact,PRODUCT,Exists
+Codes produits actifs ?,OUI,product_active,MLP_HEADER (pending),mlp_header.REMOVEFLAG -> OUI/NON,Pending (MLP key)
+Codes analyses choisis :,TOUS,analysis_code,LAFA fact,ANALYSIS,Exists
+Noms de mesures choisis :,TOUS,component_name,LAFA fact,COMPONENT_NAME,Exists
+Numéros d'échantillons choisis :,TOUS,sample_number,LAFA fact,ID_NUMERIC,Exists
+Codes clients choisis :,TOUS,customer_code,LAFA fact,CUSTOMER_ID,Exists
+Codes origine matière :,TOUS,material_origin,LAFA fact,LOCATION_ID,Exists
+Tonnage :,TOUS,tonnage,LAFA fact,TONNAGE,Exists
+Type d'échantillon :,TOUS,sample_type,LAFA fact,SAMPLE_TYPE,Exists
+Conditionnement :,TOUS,packaging,LAFA fact,CONDITIONNEMENT,Exists
+Numéros de lot :,TOUS,lot_number,LAFA fact,NUM_LOT,Exists
+Numéros de BL :,TOUS,delivery_note,LAFA fact,REF_LIVRAISON,Exists
+Date de début :,02/09/2012,sampled_date,LAFA fact,SAMPLED_DATE (>=),Exists
+Date de fin :,02/12/2012,sampled_date,LAFA fact,SAMPLED_DATE (<=),Exists
+Nb de jours :,*,(computed),-,date span,Report-side
+,,,,,
+N,3,(row number),-,ROW_NUMBER(),Generate
+Date et heure,05/09/12 17:20,sampled_date,LAFA fact,SAMPLED_DATE,Exists
+Echantillon,SM-5-SEP-2012-001389,sample_reference,LAFA fact,ID_TEXT,Exists
+Num Echantillon,106515,sample_number,LAFA fact,ID_NUMERIC,Exists
+Type d'échantilon,NORMAL,sample_type,LAFA fact,SAMPLE_TYPE,Exists
+Origine,FABEMI,material_origin,LAFA fact,LOCATION_ID,Exists
+Destination,SP43,destination_material,LAFA fact,DESTINATION_MATIERE,Exists
+Commentaire,SP43,comments,LAFA fact,COMMENTAIRES,Exists
+Composant,AI203,component_name,LAFA fact,COMPONENT_NAME,Exists
+Measures,"71,46",result_value,LAFA fact,RESULT_VALUE,Exists

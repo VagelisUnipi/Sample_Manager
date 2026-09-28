@@ -1,0 +1,80 @@
+Report Field,View Column Name,Source Table.Column,Status / Note
+=== FILTERS / PROMPTS ===,,,
+Codes contôles choisis :,control_code,LAFA.CODE_CONTROLE,Exists (filter)
+Codes contôles actifs ?,control_code_active,CODE_CONTROLE.REMOVEFLAG,Exists (filter)
+Codes produits choisis :,product_code,LAFA.PRODUCT,Exists (filter)
+Codes produits actifs ?,product_active,MLP_HEADER.REMOVEFLAG,Pending MLP key (filter)
+Produits actifs :,product_active,MLP_HEADER.REMOVEFLAG,Pending MLP key (filter)
+Produits qualifiés choisis :,qualified_product,LAFA.PRODUIT_QUALIFIE,Exists (filter)
+Codes analyses choisis :,analysis_code,LAFA.ANALYSIS,Exists (filter)
+Noms d'analyses choisis :,analysis_code,LAFA.ANALYSIS,Exists (filter)
+Noms de mesures choisis :,component_name,LAFA.COMPONENT_NAME,Exists (filter)
+Numéros d'échantillons choisis :,sample_number,LAFA.ID_NUMERIC,Exists (filter)
+Codes clients choisis :,customer_code,LAFA.CUSTOMER_ID,Exists (filter)
+Codes origine matière :,material_origin,LAFA.LOCATION_ID,Exists (filter)
+Tonnage :,tonnage,LAFA.TONNAGE,Exists (filter)
+Type d'échantillon :,sample_type,LAFA.SAMPLE_TYPE,Exists (filter)
+Conditionnement :,packaging,LAFA.CONDITIONNEMENT,Exists (filter)
+Numéros de lot :,lot_number,LAFA.NUM_LOT,Exists (filter)
+Numéros de BL :,delivery_note,LAFA.REF_LIVRAISON,Exists (filter)
+Niveau de spécification :,spec_level,MLP_VIEW.LEVEL_ID,Placeholder value in view (mlp_view not ingested)
+Date de début :,sampled_date,LAFA.SAMPLED_DATE,Exists (filter >=)
+Date de fin :,sampled_date,LAFA.SAMPLED_DATE,Exists (filter <=)
+Type de Date,(prompt),-,Report-side (DP=SAMPLED_DATE / DA=DATE_RESULT_ENTERED selector; per BO universe filter. LOGIN_DATE backs the separate 'Analyse' output column only)
+Nb de jours :,(computed),-,Report-side (date span)
+Nb d'heures :,(computed),-,Report-side (hours span)
+=== OUTPUT / DETAIL COLUMNS ===,,,
+Source,source,LAFA.SOURCE,Exists
+Site,site,LAFA.SOURCE,Exists
+Num Echantillon,sample_number,LAFA.ID_NUMERIC,Exists
+N° échantillon,sample_number,LAFA.ID_NUMERIC,Exists
+N° BDQ,sample_number,LAFA.ID_NUMERIC,Exists
+Echantillon,sample_reference,LAFA.ID_TEXT,Exists
+Date et heure,sampled_date,LAFA.SAMPLED_DATE,Exists
+Date d'échantillon,sampled_date,LAFA.SAMPLED_DATE,Exists
+Date de prélèvement,sampled_date,LAFA.SAMPLED_DATE,Exists
+Analyse,analysis_date,LAFA.LOGIN_DATE,Exists
+Type d'échantillon,sample_type,LAFA.SAMPLE_TYPE,Exists
+Type d'échantilon,sample_type,LAFA.SAMPLE_TYPE,Exists
+Type échantillon,sample_type,LAFA.SAMPLE_TYPE,Exists
+Origine,material_origin,LAFA.LOCATION_ID,Exists
+Code origine matière,material_origin,LAFA.LOCATION_ID,Exists
+Origine Matière,material_origin,LAFA.LOCATION_ID,Exists
+Point de prélèvement,sampling_point,LAFA.SAMPLING_POINT,Exists
+Pt de prélev,sampling_point,LAFA.SAMPLING_POINT,Exists
+Prélev,sampler,LAFA.PRELEVEUR,Exists
+Destination,destination_material,LAFA.DESTINATION_MATIERE,Exists
+Tonnage,tonnage,LAFA.TONNAGE,Exists
+Commentaire,commentaires,LAFA.COMMENTAIRES,Exists
+Code produit,product_code,LAFA.PRODUCT,Exists
+Produit qualifé,qualified_product,LAFA.PRODUIT_QUALIFIE,Exists
+Produit cible,qualified_product,LAFA.PRODUIT_QUALIFIE,Confirm (no spec dimension; tentatively PRODUIT_QUALIFIE)
+Libellé du produit,product_label,MLP_HEADER.DESCRIPTION,Pending (MLP key)
+Code contrôle,control_code,LAFA.CODE_CONTROLE,Exists
+Code de l'analyse,analysis_code,LAFA.ANALYSIS,Exists
+Type d'analyse,analysis_type,VERSIONED_ANALYSIS.ANALYSIS_TYPE,Exists (USINE if blank)
+Composant,component_name,LAFA.COMPONENT_NAME,Exists
+Mesure,component_name,LAFA.COMPONENT_NAME,Exists
+Measures,result_value,LAFA.RESULT_VALUE,Exists
+Mesures,result_value,LAFA.RESULT_VALUE,Exists
+Valeur cible,target_value,MLP_VIEW.TYPICAL_TEXT,Placeholder value in view (mlp_view not ingested)
+Specif min,spec_min,MLP_VIEW.MIN_LIMIT,Placeholder value in view (mlp_view not ingested)
+Specif max,spec_max,MLP_VIEW.MAX_LIMIT,Placeholder value in view (mlp_view not ingested)
+Niveau de specification,spec_level,MLP_VIEW.LEVEL_ID,Placeholder value in view (mlp_view not ingested)
+Qualif. Auto,auto_qualification,LAFA.OUT_OF_RANGE,Exists (T->NON else OUI)
+Qualif Echant,sample_qualification,LAFA.ON_SPEC,Exists (T->OUI else NON)
+Granulométrie,granulometry,PHRASE.PHRASE_TEXT,Exists (scoped GRANULO + source)
+Forme,shape,PHRASE_FORMAT.PHRASE_TEXT,Placeholder value in view (phrase_format not ingested)
+Nom du job,job_name,JOB_HEADER.JOB_NAME,Exists
+Fournisseur,supplier,JOB_HEADER.FOURNISSEUR,Exists
+Livraison,delivery_date,JOB_HEADER.DATE_LIVRAISON,Exists
+Date de livraison,delivery_date,JOB_HEADER.DATE_LIVRAISON,Exists
+Réf de livraison,delivery_reference,JOB_HEADER.REF_LIVRAISON,Exists
+N° de lot,supplier_lot_number,JOB_HEADER.LOT_FOURNISSEUR,Exists
+Tas de stockage,storage_pile,JOB_HEADER.TAS_STOCKAGE,Exists
+=== COMPOSANTS (PIVOT: component_name -> result_value) ===,,,
+PCS labo,result_value,LAFA.RESULT_VALUE,Pivot - where component_name='PCS labo' (composant)
+PCI calculé,result_value,LAFA.RESULT_VALUE,Pivot - where component_name='PCI' (composant)
+Viscosité dynamique à 50°C,result_value,LAFA.RESULT_VALUE,Pivot - where component_name='Viscosité dynamique à 50°C' (composant)
+=== REPORT-SIDE (generated) ===,,,
+N,(row number),-,Generate ROW_NUMBER()

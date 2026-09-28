@@ -1,0 +1,30 @@
+Hardcoded value fields in vw_lafa_report_base.sql
+==================================================
+
+in whi-------------------+----------------------------+--------+-----------------------------------+-----------------------------
+spec_level         | 'ECART_MP'                 | string | pure literal (every row)          | MLP_VIEW.LEVEL_ID
+target_value       | '52.5'                     | string | pure literal (every row)          | MLP_VIEW.TYPICAL_TEXT
+spec_min           | '54.50'                    | string | pure literal (every row)          | MLP_VIEW.MIN_LIMIT
+spec_max           | '100.00'                   | string | pure literal (every row)          | MLP_VIEW.MAX_LIMIT
+shape              | 'CONCASSE'                 | string | pure literal (every row)          | PHRASE_FORMAT.PHRASE_TEXT
+product_label      | 'Bauxite Rouge ( 40-100 )' | string | fallback via coalesce (join miss) | MLP_HEADER.DESCRIPTION
+
+
+Two categories
+--------------
+Pure literals (5): spec_level, target_value, spec_min, spec_max, shape.
+  These are constant on every row because their tables (mlp_view, phrase_format)
+  aren't ingested. Swap the literal for the real column + uncomment the join once
+  the table lands.
+
+Fallback (1): product_label uses coalesce(h.description, 'Bauxite Rouge ( 40-100 )'):
+  it shows the REAL description when the mlp_header key matches, and only falls back
+  to the mock when it doesn't (currently always, since the key is broken).
+
+
+Not hardcoded but worth noting
+------------------------------
+product_active is: case when h.removeflag='F' then 'OUI' else 'NON' end
+  It is COMPUTED, not a literal, but with the broken MLP key it currently evaluates
+  to 'NON' for every row. It can be wrapped to carry a mock 'OUI' until the key is
+  fixed, if desired.

@@ -1,0 +1,25 @@
+-- CUSTOMER (Redshift DW typed table)
+-- Deploy order 06/15 (forward FK order).
+-- Source of truth: DDL/latest_dll_truth/ALL_TABLES_REDSHIFT.sql
+
+CREATE TABLE CUSTOMER (
+    "IDENTITY"      VARCHAR(50)     NOT NULL,
+    GROUP_ID        VARCHAR(50),
+    COMPANY_NAME    VARCHAR(200),
+    ADDRESS1        VARCHAR(100),
+    ADDRESS2        VARCHAR(100),
+    ADDRESS3        VARCHAR(100),
+    ADDRESS4        VARCHAR(100),
+    ADDRESS5        VARCHAR(100),
+    ADDRESS6        VARCHAR(100),
+    PHONE_NUM       VARCHAR(50),
+    CONTACT         VARCHAR(100),
+    MODIFIED_ON     VARCHAR(20),
+    MODIFIED_BY     VARCHAR(50),
+    MODIFIABLE      CHAR(1),
+    REMOVEFLAG      CHAR(1),
+    SUSPENDFLAG     CHAR(1),
+    SOURCE          VARCHAR(10),
+    LAST_UPDATED_AT TIMESTAMP,
+    CONSTRAINT PK_CUSTOMER PRIMARY KEY ("IDENTITY")
+);

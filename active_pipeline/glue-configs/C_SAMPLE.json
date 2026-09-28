@@ -1,0 +1,6 @@
+{
+  "TargetTable": "c_sample",
+  "HasHeader": "true",
+  "Delimiter": ",",
+  "Encoding": "windows-1252"
+}
