@@ -1,2 +1,7 @@
 __pycache__/
 *.pyc
+
+# Large LAFA data extracts - kept local only, too big for GitHub (100 MB limit)
+source_files/**/*.csv
+# ...except the small error-proof sample
+!source_files/_readable/ERROR_PROOF_*.csv
