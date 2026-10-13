@@ -691,22 +691,46 @@
             REFERENCES PHRASE (PHRASE_ID)
     );
 
+    -- MLP_VIEW -- material limit plan (spec limits per product/analysis/component/level).
+    -- Rewritten 2026-10-13 from the real MLP_VIEW_prod_extract (FOS, 20,446 rows):
+    --   * 23 source columns, not 10. Column order mirrors the extract header.
+    --   * PK corrected to include LEVEL_ID. The old 4-column key was NOT unique
+    --     (20,446 rows -> 13,926 distinct, 6,520 duplicates) because one
+    --     product/analysis/component carries multiple spec levels (LEVEL_ID has
+    --     17 values: ACHAT, ALARME, ZONEGRISE, ...). With LEVEL_ID it is exact.
+    --     This is not cosmetic: Redshift does not enforce constraints but the
+    --     planner TRUSTS them, so a false PK can yield incorrect results.
+    --   * Both FKs omitted -- they fail against the real data, and a false FK
+    --     misleads the planner the same way. See active_pipeline/ddl/tables/
+    --     16_mlp_view.sql for the measured evidence and re-enable conditions.
     CREATE TABLE MLP_VIEW (
-        ANALYSIS_ID     VARCHAR(50)     NOT NULL,
-        COMPONENT_NAME  VARCHAR(100)    NOT NULL,
-        PRODUCT_ID      VARCHAR(50)     NOT NULL,
-        PRODUCT_VERSION BIGINT          NOT NULL,
-        LEVEL_ID        VARCHAR(50),
-        LEVEL_ORDER     VARCHAR(50),
-        TEXT_SPEC       VARCHAR(500),
-        MIN_LIMIT       VARCHAR(50),
-        MAX_LIMIT       VARCHAR(50),
-        TYPICAL_TEXT    VARCHAR(50),
-        SOURCE          VARCHAR(10),
-        LAST_UPDATED_AT TIMESTAMP,
-        CONSTRAINT PK_MLP_VIEW PRIMARY KEY (ANALYSIS_ID, COMPONENT_NAME, PRODUCT_ID, PRODUCT_VERSION),
-        CONSTRAINT FK_MLP_VIEW_MLP_HEADER FOREIGN KEY (PRODUCT_ID, PRODUCT_VERSION)
-            REFERENCES MLP_HEADER ("IDENTITY", PRODUCT_VERSION)
+        PRODUCT_ID           VARCHAR(50)     NOT NULL,
+        PRODUCT_VERSION      BIGINT          NOT NULL,
+        ANALYSIS_ID          VARCHAR(50)     NOT NULL,
+        COMPONENT_NAME       VARCHAR(100)    NOT NULL,
+        COMPONENT_TYPE       CHAR(1),
+        LEVEL_ID             VARCHAR(50)     NOT NULL,
+        LEVEL_ORDER          VARCHAR(50),
+        CONTINUE_CHECKING    CHAR(1),
+        MESSAGE_ACTION       CHAR(1),
+        REPORT_ACTION        CHAR(1),
+        RESULT_ACTION        CHAR(1),
+        DISPLAY_MESSAGE      VARCHAR(500),
+        REPORT_NAME          VARCHAR(50),
+        ROUTINE_NAME         VARCHAR(50),
+        MIN_LIMIT            VARCHAR(50),
+        MAX_LIMIT            VARCHAR(50),
+        TEXT_SPEC            VARCHAR(500),
+        TEXT_PHRASE          VARCHAR(50),
+        BOOLEAN_PASS         CHAR(1),
+        TYPICAL_TEXT         VARCHAR(50),
+        PRODUCT_CODE         VARCHAR(50),
+        DUREE_ARCHI          VARCHAR(50),
+        DESCRIPTION          VARCHAR(200),
+        SOURCE               VARCHAR(10),
+        LAST_UPDATED_AT      TIMESTAMP,
+        CONSTRAINT PK_MLP_VIEW PRIMARY KEY
+            (ANALYSIS_ID, COMPONENT_NAME, PRODUCT_ID, PRODUCT_VERSION, LEVEL_ID)
     );
 
     CREATE TABLE DESTINATION (
